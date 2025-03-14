@@ -11,6 +11,8 @@ fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
     let pool = ThreadPool::new(4);
 
+    // 只能接受2次请求，服务器就会自己关掉
+    // listener.incoming().take(2)
     for stream in listener.incoming() {
         let stream = stream.unwrap();
 
@@ -18,6 +20,7 @@ fn main() {
             handle_connection(stream);
         })
     }
+    println!("Shutdown!!")
 }
 
 fn handle_connection(mut stream: TcpStream) {
