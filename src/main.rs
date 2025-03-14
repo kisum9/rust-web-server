@@ -1,3 +1,4 @@
+use rust_web_server::ThreadPool;
 use std::{
     fs,
     io::{BufRead, BufReader, Write},
@@ -8,11 +9,18 @@ use std::{
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let pool = ThreadPool::new(4);
 
+    // 只能接受2次请求，服务器就会自己关掉
+    // listener.incoming().take(2)
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handle_connection(stream);
+
+        pool.execute(|| {
+            handle_connection(stream);
+        })
     }
+    println!("Shutdown!!")
 }
 
 fn handle_connection(mut stream: TcpStream) {
@@ -27,8 +35,6 @@ fn handle_connection(mut stream: TcpStream) {
         }
         _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
     };
-
-    println!("{status_line}, {filename}");
 
     let content = fs::read_to_string(filename).unwrap();
     let length = content.len();
